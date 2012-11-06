@@ -18,7 +18,7 @@ var g_treasure =
     img: null,
     width: 100,
     height: 100,
-    drop_speed: 360,
+    drop_speed: 160,
     current_track:0,
 
     init: function()
@@ -62,8 +62,8 @@ var g_treasure =
 var g_player = {
     x: 0,
     y: 0,
-    width: 50,
-    height: 50,
+    width: 30,
+    height: 30,
     current_track: 0,
     img: null,
     init: function()
