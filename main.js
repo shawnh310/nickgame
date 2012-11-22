@@ -264,7 +264,7 @@ function init()
         g_player.move_right();
     });
 
-    $(document).bind("keydown.down", function()
+    $(document).bind("keydown.up", function()
     {
         g_player.move_mid();
     });
