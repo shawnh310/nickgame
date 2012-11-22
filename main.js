@@ -112,13 +112,14 @@ var g_player = {
 
     move_left: function()
     {
-        this.current_track = 0;
+	if(this.current_track > 0) // substract only if current_track > 0
+	    this.current_track = (this.current_track -1) % 3;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
     move_right: function()
     {
-        this.current_track = 2;
+        this.current_track = (this.current_track +1) % 3;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
