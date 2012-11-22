@@ -15,6 +15,8 @@ var g_game_stats =
     remaining_time: g_config.time
 }
 
+g_bg_music = null;
+
 var g_canvas = null;
 
 var g_treasure =
@@ -26,11 +28,14 @@ var g_treasure =
     height: 100,
     drop_speed: 160,
     current_track:0,
+    sound: null,
 
     init: function()
     {
         this.img = new Image();
         this.img.src = "logo.png";
+
+        this.sound = new Audio("Pacman_Eating_Cherry_Sound_Effect.mp3");
 
         this.restart();
     },
@@ -47,6 +52,9 @@ var g_treasure =
         if ( (this.y+this.height) >= g_player.y && this.current_track==g_player.current_track)
         {
             g_game_stats.score += g_config.treasure_score;
+
+            this.sound.play();
+
             this.restart();
             return;
         }
@@ -56,6 +64,8 @@ var g_treasure =
             g_player.life--;
             if ( g_player.life == -1 )
                 g_player.life = g_config.life;
+
+            g_player.miss_catch_sound.play();
 
             this.restart();
         }
@@ -78,6 +88,7 @@ var g_player = {
     img: null,
     life: g_config.life,
     life_img: null,
+    miss_catch_sound: null,
 
     init: function()
     {
@@ -86,6 +97,8 @@ var g_player = {
 
         this.life_img = new Image();
         this.life_img.src = "nick-6.png";
+
+        this.miss_catch_sound = new Audio("Pacman_Dies_Sound_Effect.mp3");
 
         this.current_track = 0;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
@@ -174,11 +187,9 @@ function draw_info()
     g_canvas.font = "bold 20px arcade_font";
 
     g_canvas.fillStyle = "#FF0000";
-
     g_canvas.fillText("SCORE", g_background.min_screen_x + 30, g_background.min_screen_y + 30, 50);
 
     g_canvas.fillStyle = "#000000";
-
     g_canvas.fillText(g_game_stats.score, g_background.min_screen_x + 30, g_background.min_screen_y + 60, 50);
 
 
@@ -240,6 +251,8 @@ function init()
     g_treasure.init();
     g_player.init();
 
+    g_bg_music = new Audio("Pacman_Opening_Song_Sound_Effect.mp3");
+    g_bg_music.play();
 
     $(document).bind("keydown.left", function()
     {
