@@ -2,9 +2,11 @@ var g_config =
 {
     fps: 30,
     track_centers:[],
+    golden_ratio: 0.9,
     treasure_score: 100,
-    width: 1000,
-    height: 700,
+    gold_treasure_score: 500,
+    width: 800,
+    height: 600,
     life: 3,
     time: 60
 }
@@ -33,8 +35,7 @@ var g_treasure =
     init: function()
     {
         this.img = new Image();
-        this.img.src = "logo.png";
-
+	this.img.src = "logo.png";
         this.sound = new Audio("Pacman_Eating_Cherry_Sound_Effect.mp3");
 
         this.restart();
@@ -51,7 +52,7 @@ var g_treasure =
 
         if ( (this.y+this.height) >= g_player.y && this.current_track==g_player.current_track)
         {
-            g_game_stats.score += g_config.treasure_score;
+            g_game_stats.score += this.treasure_score;
 
             this.sound.play();
 
@@ -73,6 +74,15 @@ var g_treasure =
 
     restart: function()
     {
+	if (Math.random() < g_config.golden_ratio) 
+	{
+		this.img.src = "logo_gold.gif";
+		this.treasure_score = g_config.gold_treasure_score;
+	} else {
+		this.img.src = "logo.png";
+		this.treasure_score = g_config.treasure_score;
+	}
+
         this.current_track = Math.floor( Math.random()*12 ) % 3;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
         this.y = g_background.min_screen_y;
