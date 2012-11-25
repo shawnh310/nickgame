@@ -15,9 +15,19 @@ var g_game_stats =
     remaining_time: g_config.time
 }
 
-g_bg_music = null;
+var g_game_states =
+{
+    WAIT_FOR_START : 0,
+    RUNNING : 1,
+    END : 2
+};
+
+var g_current_game_state;
 
 var g_canvas = null;
+
+var g_game_over_sound = new Audio("Super_Mario_Bros_Die_Sound_Effect.mp3");
+var g_game_complete_sound = new Audio("Angry_Birds_Level_Complete_Sound_Effect.mp3");
 
 var g_treasure =
 {
@@ -62,8 +72,11 @@ var g_treasure =
         if ( (this.y+this.height) >= g_background.max_screen_y )
         {
             g_player.life--;
-            if ( g_player.life == -1 )
-                g_player.life = g_config.life;
+            if ( g_player.life == 0 )
+            {
+                g_current_game_state = g_game_states.END;
+                return;
+            }
 
             g_player.miss_catch_sound.play();
 
@@ -156,6 +169,74 @@ var g_background =
     }
 }
 
+var g_flash_message =
+{
+    cur_time : 0,
+    msg : null,
+
+    restart : function()
+    {
+        this.cur_time = 0;
+    },
+
+    update : function(elapsed_time)
+    {
+        this.cur_time += elapsed_time;
+    },
+
+    draw : function()
+    {
+        g_canvas.font = "bold 20px arcade_font";
+
+        g_canvas.textAlign = 'center';
+
+        if ( Math.floor( this.cur_time ) % 2 == 0 )
+        {
+            g_canvas.fillStyle = "#555555";
+            g_canvas.fillText( this.msg,
+                (g_background.min_screen_x + g_background.max_screen_x) / 2,
+                (g_background.min_screen_y + g_background.max_screen_y)/2, 200);
+        }
+        else
+        {
+
+        }
+    }
+}
+
+var g_timer =
+{
+    last_update_time : -1,
+    elapsed_time : -1,
+
+    update : function()
+    {
+        var cur_time = new Date().getTime() / 1000.0;
+
+        if ( this.last_update_time == -1 )
+        {
+            this.last_update_time = cur_time;
+        }
+        else
+        {
+            this.elapsed_time = cur_time - this.last_update_time;
+            this.last_update_time = cur_time;
+        }
+    },
+
+    getElapsedTime : function()
+    {
+        if ( this.elapsed_time == -1 )
+        {
+            return 1.0 / g_config.fps;
+        }
+        else
+        {
+            return this.elapsed_time;
+        }
+    }
+}
+
 
 function create_canvas()
 {
@@ -171,15 +252,73 @@ function create_canvas()
     canvasElement.appendTo('body');
 }
 
-function update()
+
+function update_wait_for_start()
 {
-    var elapsed_time = 1.0 / g_config.fps;
+    var elapsed_time = g_timer.getElapsedTime();
+
+    g_flash_message.update(elapsed_time);
+}
+
+function update_running()
+{
+    var elapsed_time = g_timer.getElapsedTime();
 
     g_treasure.update(elapsed_time);
 
     g_game_stats.remaining_time -= elapsed_time;
     if ( g_game_stats.remaining_time < 0 )
         g_game_stats.remaining_time = g_config.time;
+}
+
+var g_end_state = 0;
+function update_end()
+{
+    if ( g_end_state == 0 )
+    {
+        if ( g_player.life == 0)
+        {
+            if ( g_game_over_sound.paused )
+            {
+                g_game_over_sound.play();
+                g_game_over_sound.addEventListener('ended', function(){g_end_state = 1;});
+            }
+        }
+        else
+        {
+            if ( g_game_complete_sound.paused )
+            {
+                g_game_complete_sound.play();
+                g_game_complete_sound.addEventListener('ended', function(){g_end_state = 1;});
+            }
+        }
+    }
+    else if ( g_end_state == 1 )
+    {
+        var retVal = prompt("Enter your name : ", "your name here");
+        g_end_state = 2;
+    }
+}
+
+
+function update()
+{
+    g_timer.update();
+
+    switch ( g_current_game_state )
+    {
+        case g_game_states.WAIT_FOR_START:
+            update_wait_for_start();
+            break;
+
+        case g_game_states.RUNNING:
+            update_running();
+            break;
+
+        case g_game_states.END:
+            update_end();
+            break;
+    }
 }
 
 function draw_info()
@@ -210,8 +349,18 @@ function draw_info()
 
 }
 
+function draw_wait_for_start()
+{
+    g_canvas.clearRect(0,0,g_canvas.width,g_canvas.height);
 
-function draw()
+    g_background.draw();
+
+    draw_info();
+
+    g_flash_message.draw();
+}
+
+function draw_running()
 {
     g_canvas.clearRect(0,0,g_canvas.width,g_canvas.height);
 
@@ -221,6 +370,37 @@ function draw()
     g_player.draw();
 
     draw_info();
+}
+
+function draw_end()
+{
+    g_canvas.clearRect(0,0,g_canvas.width,g_canvas.height);
+
+    g_background.draw();
+
+    g_treasure.draw();
+    g_player.draw();
+
+    draw_info();
+}
+
+
+function draw()
+{
+    switch ( g_current_game_state )
+    {
+        case g_game_states.WAIT_FOR_START:
+        draw_wait_for_start();
+        break;
+
+        case g_game_states.RUNNING:
+        draw_running();
+        break;
+
+        case g_game_states.END:
+            draw_end();
+            break;
+    }
 }
 
 function game_loop()
@@ -240,33 +420,97 @@ function compute_track_centers()
     g_config.track_centers.push( g_background.min_screen_x + (g_background.max_screen_x-g_background.min_screen_x) - max_width/2 );
 }
 
+
+var g_start_sound = new Audio("Pacman_Opening_Song_Sound_Effect.mp3");
+function left_key_handler()
+{
+    switch ( g_current_game_state )
+    {
+        case g_game_states.WAIT_FOR_START:
+            if ( g_start_sound.paused )
+            {
+                g_start_sound.play();
+                g_start_sound.addEventListener('ended', function(){g_current_game_state = g_game_states.RUNNING;});
+                g_flash_message.msg = "READY!"
+            }
+            break;
+        case g_game_states.RUNNING:
+            g_player.move_left();
+            break;
+        case g_game_states.END:
+            break;
+    }
+}
+
+function right_key_handler()
+{
+    switch ( g_current_game_state )
+    {
+        case g_game_states.WAIT_FOR_START:
+            if ( g_start_sound.paused )
+            {
+                g_start_sound.play();
+                g_start_sound.addEventListener('ended', function(){g_current_game_state = g_game_states.RUNNING;});
+                g_flash_message.msg = "READY!"
+            }
+            break;
+        case g_game_states.RUNNING:
+            g_player.move_right();
+            break;
+        case g_game_states.END:
+            break;
+    }
+}
+
+function down_key_handler()
+{
+    switch ( g_current_game_state )
+    {
+        case g_game_states.WAIT_FOR_START:
+            if ( g_start_sound.paused )
+            {
+                g_start_sound.play();
+                g_start_sound.addEventListener('ended', function(){g_current_game_state = g_game_states.RUNNING;});
+                g_flash_message.msg = "READY!"
+            }
+            break;
+        case g_game_states.RUNNING:
+            g_player.move_mid();
+            break;
+        case g_game_states.END:
+            break;
+    }
+}
+
+
 function init()
 {
+    g_current_game_state = g_game_states.WAIT_FOR_START;
+
     create_canvas();
 
     g_background.init();
+
+    g_flash_message.msg = "PRESS ANY KEY TO START";
 
     compute_track_centers();
 
     g_treasure.init();
     g_player.init();
 
-    g_bg_music = new Audio("Pacman_Opening_Song_Sound_Effect.mp3");
-    g_bg_music.play();
-
     $(document).bind("keydown.left", function()
     {
-        g_player.move_left();
+        left_key_handler();
     });
 
     $(document).bind("keydown.right", function()
     {
-        g_player.move_right();
+        right_key_handler();
     });
 
     $(document).bind("keydown.down", function()
     {
-        g_player.move_mid();
+        down_key_handler();
     });
 }
 
@@ -274,5 +518,5 @@ function onload()
 {
     init();
 
-    setInterval("game_loop()",33);
+    setInterval("game_loop()",1/g_config.fps);
 }
