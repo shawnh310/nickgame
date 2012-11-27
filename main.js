@@ -4,7 +4,7 @@ var g_config =
     track_centers:[],
     golden_ratio: 0.1,
     treasure_score: 100,
-    gold_treasure_score: 500,
+    gold_treasure_score: 300,
     width: 1000,
     height: 700,
     life: 3,
