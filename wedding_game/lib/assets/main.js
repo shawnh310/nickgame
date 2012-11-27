@@ -91,11 +91,11 @@ var g_treasure =
     {
 	if (Math.random() < g_config.golden_ratio) 
 	{
-		this.img.src = "logo_gold.gif";
+		this.img.src = "assets/logo_gold.gif";
 		this.treasure_score = g_config.gold_treasure_score;
 		this.drop_speed = g_config.drop_speed * 2;
 	} else {
-		this.img.src = "logo.png";
+		this.img.src = "assets/logo.png";
 		this.treasure_score = g_config.treasure_score;
 		this.drop_speed = g_config.drop_speed;
 	}
