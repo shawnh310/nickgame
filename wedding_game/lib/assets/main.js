@@ -8,7 +8,7 @@ var g_config =
     width: 1000,
     height: 700,
     life: 3,
-    time: 30,
+    time: 30
     drop_speed: 160
 }
 
@@ -29,8 +29,8 @@ var g_current_game_state;
 
 var g_canvas = null;
 
-var g_game_over_sound = new Audio("Super_Mario_Bros_Die_Sound_Effect.mp3");
-var g_game_complete_sound = new Audio("Angry_Birds_Level_Complete_Sound_Effect.mp3");
+var g_game_over_sound = new Audio("assets/Super_Mario_Bros_Die_Sound_Effect.mp3");
+var g_game_complete_sound = new Audio("assets/Angry_Birds_Level_Complete_Sound_Effect.mp3");
 
 var g_treasure =
 {
@@ -39,15 +39,16 @@ var g_treasure =
     img: null,
     width: 100,
     height: 100,
+    drop_speed: g_config.drop_speed,
     current_track:0,
     sound: null,
-    drop_speed: g_config.drop_speed,
 
     init: function()
     {
         this.img = new Image();
-	this.img.src = "logo.png";
-        this.sound = new Audio("Pacman_Eating_Cherry_Sound_Effect.mp3");
+        this.img.src = "assets/logo.png";
+
+        this.sound = new Audio("assets/Pacman_Eating_Cherry_Sound_Effect.mp3");
 
         this.restart();
     },
@@ -63,7 +64,7 @@ var g_treasure =
 
         if ( (this.y+this.height) >= g_player.y && this.current_track==g_player.current_track)
         {
-            g_game_stats.score += this.treasure_score;
+            g_game_stats.score += g_config.treasure_score;
 
             this.sound.play();
 
@@ -119,16 +120,24 @@ var g_player = {
     init: function()
     {
         this.img = new Image();
-        this.img.src = "nick-5.png";
+        this.img.src = "assets/nick-5.png";
 
         this.life_img = new Image();
-        this.life_img.src = "nick-6.png";
+        this.life_img.src = "assets/nick-6.png";
 
-        this.miss_catch_sound = new Audio("Pacman_Dies_Sound_Effect.mp3");
+        this.miss_catch_sound = new Audio("assets/Pacman_Dies_Sound_Effect.mp3");
 
-        this.current_track = 0;
+        this.current_track = 1;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
         this.y = g_background.max_screen_y - this.height;
+    },
+
+    restart: function()
+    {
+        this.current_track = 1;
+        this.x = g_config.track_centers[ this.current_track ] - this.width/2;
+
+        this.life = g_config.life;
     },
 
     draw: function()
@@ -166,7 +175,7 @@ var g_background =
     init : function()
     {
         this.img = new Image();
-        this.img.src = "arcade.png"
+        this.img.src = "assets/arcade.png"
 
         var x_scale = g_config.width / this.img.width;
         var y_scale = g_config.height / this.img.height;
@@ -214,6 +223,90 @@ var g_flash_message =
         else
         {
 
+        }
+    }
+}
+
+
+var g_rank =
+{
+    cur_time : 0,
+
+    restart : function()
+    {
+        this.cur_time = 0;
+    },
+
+    update : function(elapsed_time)
+    {
+        this.cur_time += elapsed_time;
+    },
+
+    draw : function()
+    {
+        g_canvas.font = "bold 20px arcade_font";
+
+        var y_gap = (g_background.max_screen_y - g_background.min_screen_y) / (g_rank_json.list.length*2+1);
+
+        var cur_y = g_background.min_screen_y + y_gap;
+        for ( var i = 0; i < g_rank_json.list.length; i++ )
+        {
+            if ( i == g_rank_json.your_index )
+            {
+                if ( Math.floor( this.cur_time ) % 2 == 0 )
+                {
+                    var name  = g_rank_json.list[i].name;
+                    var score = g_rank_json.list[i].score;
+                    var rank = g_rank_json.list[i].rank;
+
+                    g_canvas.fillStyle = "#FF0000";
+
+                    g_canvas.textAlign = "left";
+                    g_canvas.fillText( "Rank " + rank,
+                        g_background.min_screen_x + 20,
+                        cur_y, 200);
+
+                    g_canvas.textAlign = "center";
+                    g_canvas.fillText( name,
+                        (g_background.max_screen_x+g_background.min_screen_x)/2,
+                        cur_y, 200);
+
+                    g_canvas.textAlign = "right";
+                    g_canvas.fillText( score,
+                        g_background.max_screen_x,
+                        cur_y, 200);
+                }
+                else
+                {
+
+                }
+            }
+            else
+            {
+                var name  = g_rank_json.list[i].name;
+                var score = g_rank_json.list[i].score;
+                var rank = g_rank_json.list[i].rank;
+
+                g_canvas.fillStyle = "#AAAAAA";
+
+                g_canvas.textAlign = "left";
+                g_canvas.fillText( "Rank " + rank,
+                    g_background.min_screen_x + 20,
+                    cur_y, 200);
+
+                g_canvas.textAlign = "center";
+                g_canvas.fillText( name,
+                    (g_background.max_screen_x+g_background.min_screen_x)/2,
+                    cur_y, 200);
+
+                g_canvas.textAlign = "right";
+                g_canvas.fillText( score,
+                    g_background.max_screen_x,
+                    cur_y, 200);
+            }
+
+
+            cur_y += y_gap * 2;
         }
     }
 }
@@ -284,10 +377,13 @@ function update_running()
     if ( g_game_stats.remaining_time <= 0 )
     {
         g_current_game_state = g_game_states.END;
+        g_game_stats.remaining_time = 0;
     }
 }
 
 var g_end_state = 0;
+var g_rank_json = null;
+var g_name = null;
 function update_end()
 {
     if ( g_end_state == 0 )
@@ -311,13 +407,14 @@ function update_end()
     }
     else if ( g_end_state == 1 )
     {
-        var name = prompt("Enter your name : ", "your name here");
         g_end_state = 2;
+
+        g_name = prompt("Enter your name : ", "your name here");
 
         $.ajax({
             url: "/game/submit_score",
             type: "post",
-            data: { name: name, score: g_game_stats.score},
+            data: { name: g_name, score: g_game_stats.score},
 
             success: function(response, textStatus, jqXHR)
             {
@@ -329,8 +426,53 @@ function update_end()
 
             complete: function(data)
             {
+                if ( data.responseText == "success" )
+                {
+                    g_end_state = 3;
+                }
+                else
+                {
+                    alert("name already existed");
+                    g_end_state = 1;
+                }
             }
         });
+    }
+    else if ( g_end_state == 2 )
+    {
+    }
+    else if ( g_end_state == 3 )
+    {
+        g_end_state = 4;
+        console.debug(g_name);
+        $.ajax({
+            url: "/game/get_rank",
+            type: "post",
+            data: {name: g_name},
+            dataType: "json",
+
+            success: function(response, textStatus, jqXHR)
+            {
+            },
+
+            error: function(jqXHR, textStatus, errorThrown)
+            {
+            },
+
+            complete: function(data)
+            {
+                g_end_state = 5;
+                g_rank_json = JSON.parse(data.responseText);
+            }
+        });
+    }
+    else if ( g_end_state == 4 )
+    {
+
+    }
+    else if ( g_end_state == 5 )
+    {
+        g_rank.update(g_timer.getElapsedTime());
     }
 }
 
@@ -359,20 +501,18 @@ function draw_info()
 {
     g_canvas.font = "bold 20px arcade_font";
 
+    g_canvas.textAlign = "left";
     g_canvas.fillStyle = "#FF0000";
     g_canvas.fillText("SCORE", g_background.min_screen_x + 30, g_background.min_screen_y + 30, 50);
 
     g_canvas.fillStyle = "#000000";
     g_canvas.fillText(g_game_stats.score, g_background.min_screen_x + 30, g_background.min_screen_y + 60, 50);
 
-
-
     g_canvas.fillStyle = "#FF0000";
     g_canvas.fillText("TIME", g_background.min_screen_x + 130, g_background.min_screen_y + 30, 50);
 
     g_canvas.fillStyle = "#000000";
     g_canvas.fillText( Math.floor( g_game_stats.remaining_time ), g_background.min_screen_x + 140, g_background.min_screen_y + 60, 50);
-
 
 
     var life_gap = 90;
@@ -401,6 +541,7 @@ function draw_running()
     g_background.draw();
 
     g_treasure.draw();
+
     g_player.draw();
 
     draw_info();
@@ -408,14 +549,24 @@ function draw_running()
 
 function draw_end()
 {
-    g_canvas.clearRect(0,0,g_canvas.width,g_canvas.height);
+    if ( g_end_state == 5 )
+    {
+        g_canvas.clearRect(0,0,g_canvas.width,g_canvas.height);
+        g_background.draw();
+        g_rank.draw();
+    }
+    else
+    {
+        g_canvas.clearRect(0,0,g_canvas.width,g_canvas.height);
 
-    g_background.draw();
+        g_background.draw();
 
-    g_treasure.draw();
-    g_player.draw();
+        g_treasure.draw();
 
-    draw_info();
+        g_player.draw();
+
+        draw_info();
+    }
 }
 
 
@@ -424,12 +575,12 @@ function draw()
     switch ( g_current_game_state )
     {
         case g_game_states.WAIT_FOR_START:
-        draw_wait_for_start();
-        break;
+            draw_wait_for_start();
+            break;
 
         case g_game_states.RUNNING:
-        draw_running();
-        break;
+            draw_running();
+            break;
 
         case g_game_states.END:
             draw_end();
@@ -455,7 +606,7 @@ function compute_track_centers()
 }
 
 
-var g_start_sound = new Audio("Pacman_Opening_Song_Sound_Effect.mp3");
+var g_start_sound = new Audio("assets/Pacman_Opening_Song_Sound_Effect.mp3");
 function left_key_handler()
 {
     switch ( g_current_game_state )
@@ -472,6 +623,10 @@ function left_key_handler()
             g_player.move_left();
             break;
         case g_game_states.END:
+            if ( g_end_state == 5 )
+            {
+                restart();
+            }
             break;
     }
 }
@@ -492,6 +647,10 @@ function right_key_handler()
             g_player.move_right();
             break;
         case g_game_states.END:
+            if ( g_end_state == 5 )
+            {
+                restart();
+            }
             break;
     }
 }
@@ -512,10 +671,29 @@ function down_key_handler()
             g_player.move_mid();
             break;
         case g_game_states.END:
+            if ( g_end_state == 5 )
+            {
+                restart();
+            }
             break;
     }
 }
 
+function restart()
+{
+    g_current_game_state = g_game_states.WAIT_FOR_START;
+
+    g_end_state = 0;
+
+    g_flash_message.msg = "PRESS ANY KEY TO START";
+
+    g_treasure.restart();
+
+    g_player.restart();
+
+    g_game_stats.score = 0;
+    g_game_stats.remaining_time = g_config.time;
+}
 
 function init()
 {
@@ -542,7 +720,7 @@ function init()
         right_key_handler();
     });
 
-    $(document).bind("keydown.up", function()
+    $(document).bind("keydown.down", function()
     {
         down_key_handler();
     });
