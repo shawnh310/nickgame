@@ -8,7 +8,7 @@ var g_config =
     width: 1000,
     height: 700,
     life: 3,
-    time: 30
+    time: 30,
     drop_speed: 160
 }
 
