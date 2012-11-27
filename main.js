@@ -2,11 +2,14 @@ var g_config =
 {
     fps: 30,
     track_centers:[],
+    golden_ratio: 0.1,
     treasure_score: 100,
+    gold_treasure_score: 300,
     width: 1000,
     height: 700,
     life: 3,
-    time: 60
+    time: 30,
+    drop_speed: 160
 }
 
 var g_game_stats =
@@ -36,15 +39,14 @@ var g_treasure =
     img: null,
     width: 100,
     height: 100,
-    drop_speed: 160,
     current_track:0,
     sound: null,
+    drop_speed: g_config.drop_speed,
 
     init: function()
     {
         this.img = new Image();
-        this.img.src = "logo.png";
-
+	this.img.src = "logo.png";
         this.sound = new Audio("Pacman_Eating_Cherry_Sound_Effect.mp3");
 
         this.restart();
@@ -61,7 +63,7 @@ var g_treasure =
 
         if ( (this.y+this.height) >= g_player.y && this.current_track==g_player.current_track)
         {
-            g_game_stats.score += g_config.treasure_score;
+            g_game_stats.score += this.treasure_score;
 
             this.sound.play();
 
@@ -86,6 +88,17 @@ var g_treasure =
 
     restart: function()
     {
+	if (Math.random() < g_config.golden_ratio) 
+	{
+		this.img.src = "logo_gold.gif";
+		this.treasure_score = g_config.gold_treasure_score;
+		this.drop_speed = g_config.drop_speed * 2;
+	} else {
+		this.img.src = "logo.png";
+		this.treasure_score = g_config.treasure_score;
+		this.drop_speed = g_config.drop_speed;
+	}
+
         this.current_track = Math.floor( Math.random()*12 ) % 3;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
         this.y = g_background.min_screen_y;
@@ -125,13 +138,14 @@ var g_player = {
 
     move_left: function()
     {
-        this.current_track = 0;
+	if(this.current_track > 0) // substract only if current_track > 0
+	    this.current_track = (this.current_track -1) % 3;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
     move_right: function()
     {
-        this.current_track = 2;
+        this.current_track = (this.current_track +1) % 3;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
@@ -528,7 +542,7 @@ function init()
         right_key_handler();
     });
 
-    $(document).bind("keydown.down", function()
+    $(document).bind("keydown.up", function()
     {
         down_key_handler();
     });
