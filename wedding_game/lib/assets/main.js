@@ -414,10 +414,15 @@ function update_end()
         g_end_state = 2;
 
         g_name = prompt("Enter your name : ", "your name here");
+        while ( g_name == null )
+        {
+ 	        g_name = prompt("Enter your name : ", "your name here");	
+        }
 
         $.ajax({
             url: "/game/submit_score",
             type: "post",
+            async: false,
             data: { name: g_name, score: g_game_stats.score},
 
             success: function(response, textStatus, jqXHR)
@@ -431,7 +436,7 @@ function update_end()
             complete: function(data)
             {
                 if ( data.responseText == "success" )
-                {
+                {	
                     g_end_state = 3;
                 }
                 else
@@ -454,6 +459,7 @@ function update_end()
             type: "post",
             data: {name: g_name},
             dataType: "json",
+            async: false,
 
             success: function(response, textStatus, jqXHR)
             {
