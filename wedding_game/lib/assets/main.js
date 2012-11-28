@@ -9,7 +9,8 @@ var g_config =
     height: 700,
     life: 3,
     time: 30,
-    drop_speed: 160
+    drop_speed: 160,
+    difficulty: 1
 }
 
 var g_game_stats =
@@ -98,6 +99,8 @@ var g_treasure =
 		this.img.src = "assets/logo.png";
 		this.treasure_score = g_config.treasure_score;
 		this.drop_speed = g_config.drop_speed;
+		difficulty = (1+ (g_config.time - g_game_stats.remaining_time) / g_config.time);
+		this.drop_speed *= difficulty;
 	}
 
         this.current_track = Math.floor( Math.random()*12 ) % 3;
@@ -148,13 +151,14 @@ var g_player = {
     move_left: function()
     {
 	if(this.current_track > 0) // substract only if current_track > 0
-	    this.current_track = (this.current_track -1) % 3;
+	    this.current_track = this.current_track -1;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
     move_right: function()
     {
-        this.current_track = (this.current_track +1) % 3;
+	if(this.current_track < 2) // increase only if current_track < 2
+		this.current_track = this.current_track +1;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
