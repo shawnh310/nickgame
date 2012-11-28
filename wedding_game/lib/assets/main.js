@@ -9,7 +9,8 @@ var g_config =
     height: 700,
     life: 3,
     time: 30,
-    drop_speed: 160
+    drop_speed: 160,
+    difficulty: 1
 }
 
 var g_game_stats =
@@ -29,8 +30,8 @@ var g_current_game_state;
 
 var g_canvas = null;
 
-var g_game_over_sound = new Audio("assets/Super_Mario_Bros_Die_Sound_Effect.mp3");
-var g_game_complete_sound = new Audio("assets/Angry_Birds_Level_Complete_Sound_Effect.mp3");
+var g_game_over_sound = new Audio("assets/Super_Mario_Bros_Die_Sound_Effect.wav");
+var g_game_complete_sound = new Audio("assets/Angry_Birds_Level_Complete_Sound_Effect.wav");
 
 var g_treasure =
 {
@@ -48,7 +49,7 @@ var g_treasure =
         this.img = new Image();
         this.img.src = "assets/logo.png";
 
-        this.sound = new Audio("assets/Pacman_Eating_Cherry_Sound_Effect.mp3");
+        this.sound = new Audio("assets/Pacman_Eating_Cherry_Sound_Effect.wav");
 
         this.restart();
     },
@@ -98,6 +99,8 @@ var g_treasure =
 		this.img.src = "assets/logo.png";
 		this.treasure_score = g_config.treasure_score;
 		this.drop_speed = g_config.drop_speed;
+		difficulty = (1+ (g_config.time - g_game_stats.remaining_time) / g_config.time);
+		this.drop_speed *= difficulty;
 	}
 
         this.current_track = Math.floor( Math.random()*12 ) % 3;
@@ -125,7 +128,7 @@ var g_player = {
         this.life_img = new Image();
         this.life_img.src = "assets/nick-6.png";
 
-        this.miss_catch_sound = new Audio("assets/Pacman_Dies_Sound_Effect.mp3");
+        this.miss_catch_sound = new Audio("assets/Pacman_Dies_Sound_Effect.wav");
 
         this.current_track = 1;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
@@ -148,13 +151,14 @@ var g_player = {
     move_left: function()
     {
 	if(this.current_track > 0) // substract only if current_track > 0
-	    this.current_track = (this.current_track -1) % 3;
+	    this.current_track = this.current_track -1;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
     move_right: function()
     {
-        this.current_track = (this.current_track +1) % 3;
+	if(this.current_track < 2) // increase only if current_track < 2
+		this.current_track = this.current_track +1;
         this.x = g_config.track_centers[ this.current_track ] - this.width/2;
     },
 
@@ -606,7 +610,7 @@ function compute_track_centers()
 }
 
 
-var g_start_sound = new Audio("assets/Pacman_Opening_Song_Sound_Effect.mp3");
+var g_start_sound = new Audio("assets/Pacman_Opening_Song_Sound_Effect.wav");
 function left_key_handler()
 {
     switch ( g_current_game_state )
