@@ -1,12 +1,12 @@
 var g_config =
 {
-    fps: 30,
+    fps: 10,
     track_centers:[],
     golden_ratio: 0.1,
     treasure_score: 100,
     gold_treasure_score: 300,
     width: 1000,
-    height: 700,
+    height: 720,
     life: 3,
     time: 30,
     drop_speed: 160,
@@ -65,7 +65,7 @@ var g_treasure =
 
         if ( (this.y+this.height) >= g_player.y && this.current_track==g_player.current_track)
         {
-            g_game_stats.score += g_config.treasure_score;
+            g_game_stats.score += this.treasure_score;
 
             this.sound.play();
 
@@ -99,7 +99,7 @@ var g_treasure =
 		this.img.src = "assets/logo.png";
 		this.treasure_score = g_config.treasure_score;
 		this.drop_speed = g_config.drop_speed;
-		difficulty = (1+ (g_config.time - g_game_stats.remaining_time) / g_config.time);
+		difficulty = (1 + g_game_stats.score / 2000);
 		this.drop_speed *= difficulty;
 	}
 
